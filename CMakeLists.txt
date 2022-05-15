@@ -10,6 +10,7 @@ project(pid_simulator)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -205,5 +206,5 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-add_executable(talker src/position_controller.cpp)
-target_link_libraries(talker ${catkin_LIBRARIES})
+add_executable(position_controller src/position_controller.cpp)
+target_link_libraries(position_controller ${catkin_LIBRARIES})

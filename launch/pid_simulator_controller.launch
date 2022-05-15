@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="pid_simulator" name="position_controller" type="position_controller" output="screen"></node>
+</launch>
