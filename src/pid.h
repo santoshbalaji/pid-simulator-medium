@@ -1,19 +1,25 @@
 #ifndef Pid_h
 #define Pid_h
 
+#define STACK_SIZE 10
+
 class Pid
 {
     private:
-        float kp;
-        float kd;
-        float ki;
-        float setPoint;
-        float input;
-        float output;
+        double kp;
+        double kd;
+        double ki;
+        double currentError;
+        double previousError;
+        double previousErrors[STACK_SIZE];
+        double setPoint;
+        double input;
+        double output;
+        double computeGrossError();
     public:
-        Pid(float kp, float kd, float ki);
-        float runNextIteration(float input, float setPoint);
-        void updateParameters(float kp, float ki, float kd);
+        Pid(double kp, double kd, double ki);
+        double runNextIteration(double output, double setPoint);
+        void updateParameters(double kp, double ki, double kd);
 };
 
 #endif

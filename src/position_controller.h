@@ -5,6 +5,8 @@
 #include "ros/ros.h"
 #include "ros/console.h"
 #include "turtlesim/Pose.h"
+#include "geometry_msgs/Twist.h"
+#include "pid.h"
 
 
 class PositionController
@@ -18,7 +20,7 @@ class PositionController
     private:
         ros::Publisher commandPublisher;
         ros::Subscriber positionFeedbackSubscriber;
-        
+
 };
 
 #endif
