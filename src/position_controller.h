@@ -13,13 +13,15 @@ class PositionController
 {
     public:
         PositionController(ros::NodeHandle& nh);
-        void computeVelocities();
         void positionFeedback(const turtlesim::Pose::ConstPtr& msg);
         void sendCommand(double linearVelocity, double angularVelocity);
+        void moveTo(double x, double y);
 
     private:
         ros::Publisher commandPublisher;
         ros::Subscriber positionFeedbackSubscriber;
+        double currentX, currentY, currentTheta;
+        double linearVelocity, angularVelocity;
 
 };
 

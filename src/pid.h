@@ -6,20 +6,16 @@
 class Pid
 {
     private:
-        double kp;
-        double kd;
-        double ki;
-        double currentError;
-        double previousError;
+        double kp, ki, kd;
+        double currentError, previousError;
         double previousErrors[STACK_SIZE];
-        double setPoint;
-        double input;
-        double output;
+        double setPoint, input, output;
         double computeGrossError();
     public:
         Pid(double kp, double kd, double ki);
         double runNextIteration(double output, double setPoint);
         void updateParameters(double kp, double ki, double kd);
+        void reset();
 };
 
 #endif

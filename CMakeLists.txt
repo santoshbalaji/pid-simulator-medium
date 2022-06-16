@@ -110,5 +110,5 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-add_executable(position_controller src/position_controller.cpp)
+add_executable(position_controller src/position_controller.cpp src/pid.cpp)
 target_link_libraries(position_controller ${catkin_LIBRARIES})
