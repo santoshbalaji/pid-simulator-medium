@@ -1,14 +1,33 @@
 #include "pid.h"
 
-Pid::Pid(double kp, double kd, double ki) : kp(kp), kd(kd), ki(ki) {}
+Pid::Pid(double kp, double kd, double ki, double maxLimit, double minLimit, bool reverse) 
+{
+    this->kp = kp;
+    this->kd = kd;
+    this->ki = ki;
+    this->maxLimit = maxLimit;
+    this->minLimit = minLimit;
+    this->reverse = reverse;
+}
 
 double Pid::runNextIteration(double output, double setPoint) 
 {
     double error = output - setPoint;
-    input = (kp * error)+ (ki * previousError) ;
+    double transit = (kp * error) + (ki * previousError);
+    if(transit < this->maxLimit && transit > this->minLimit)
+    {
+        input = transit;
+    }
+    else if(transit < this->minLimit)
+    {
+        input = this->minLimit;
+    }
+    else if(transit > this->maxLimit)
+    {
+        input = this->maxLimit;
+    }
     previousError = error;
-
-    return input;
+    return reverse ? -input : input;
 }
 
 void Pid::updateParameters(double kp, double kd, double ki) 
