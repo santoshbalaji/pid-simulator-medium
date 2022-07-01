@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "position_controller");
     ros::NodeHandle nh;
     PositionController positionController = PositionController(nh);
-    positionController.moveTo(3.5, 3.5);
+    positionController.moveTo(5.5, 3.5);
     ros::Timer timer = nh.createTimer(ros::Duration(0.3), &PositionController::moveToTimer, &positionController);
     ros::spin();
 
