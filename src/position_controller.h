@@ -18,6 +18,7 @@ class PositionController
         void positionFeedback(const turtlesim::Pose::ConstPtr& msg);
         void moveToTimer(const ros::TimerEvent& event);
         void moveTo(double x, double y);
+        void reset();
 
     private:
         ros::Publisher commandPublisher;
@@ -26,9 +27,11 @@ class PositionController
         double linearVelocity, angularVelocity;
         double expectedX, expectedY;
         Pid *pidLinearPtr, *pidAngularPtr;
+        bool indicator;
 
         void sendCommand(double linearVelocity, double angularVelocity);
         double computeTangent();
+        double computeDistance();
 };
 
 #endif
