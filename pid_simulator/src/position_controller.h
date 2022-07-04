@@ -8,30 +8,46 @@
 #include "ros/console.h"
 #include "turtlesim/Pose.h"
 #include "geometry_msgs/Twist.h"
+#include "pid_simulator_msgs/Target.h"
+#include "pid_simulator_msgs/PidTuner.h"
 #include "pid.h"
+
+#define NODE_NAME "position_controller"
+#define TIMER_FREQUENCY 0.3
+#define MAX_LINEAR_VELOCITY 0.5
+#define MIN_LINEAR_VELOCITY -0.5
+#define MAX_ANGULAR_VELOCITY 0.5
+#define MIN_ANGULAR_VELOCITY -0.5
 
 
 class PositionController
 {
     public:
         PositionController(ros::NodeHandle& nh);
-        void positionFeedback(const turtlesim::Pose::ConstPtr& msg);
         void moveToTimer(const ros::TimerEvent& event);
-        void moveTo(double x, double y);
-        void reset();
 
     private:
-        ros::Publisher commandPublisher;
-        ros::Subscriber positionFeedbackSubscriber;
-        double currentX, currentY, currentTheta;
-        double linearVelocity, angularVelocity;
-        double expectedX, expectedY;
-        Pid *pidLinearPtr, *pidAngularPtr;
-        bool indicator;
+        ros::Publisher velocityPublisher;
+        ros::Subscriber pidLinearParamsSubscriber;
+        ros::Subscriber pidAngularParamsSubscriber;
+        ros::Subscriber targetSubscriber;
+        ros::Subscriber positionSubscriber;
 
-        void sendCommand(double linearVelocity, double angularVelocity);
-        double computeTangent();
-        double computeDistance();
+        double currentX, currentY, currentTheta;
+        double expectedX, expectedY, expectedTheta;
+        double linearVelocity, angularVelocity;
+        double lp, li, ld;
+        double ap, ai, ad;
+
+        Pid *pidLinearPtr, *pidAngularPtr;
+
+        void setTarget(const pid_simulator_msgs::Target::ConstPtr& msg);
+        void setPidLinearParms(const pid_simulator_msgs::PidTuner::ConstPtr& msg);
+        void setPidAngularParms(const pid_simulator_msgs::PidTuner::ConstPtr& msg);
+        void setPosition(const turtlesim::Pose::ConstPtr& msg);
+
+        double computeTangent(double fromX, double fromY, double toX, double toY);
+        double computeDistance(double fromX, double fromY, double toX, double toY);
 };
 
 #endif

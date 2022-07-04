@@ -2,86 +2,114 @@
 
 PositionController::PositionController(ros::NodeHandle& nh)
 {
-    positionFeedbackSubscriber = nh.subscribe("/turtle1/pose", 1000, &PositionController::positionFeedback, this);
-    commandPublisher = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 1000);
-    pidLinearPtr = new Pid(0.4, 0.2, 0.5, 0.5, -0.5, false);
-    pidAngularPtr = new Pid(0.085, 0.075, 0.5, 0.1, -0.1, false);
+    positionSubscriber = nh.subscribe("/turtle1/pose", 1000, &PositionController::setPosition, this);
+    targetSubscriber = nh.subscribe("/simulator/target", 1000, &PositionController::setTarget, this);
+    pidLinearParamsSubscriber = nh.subscribe("simulator/pid_linear_params", 1000, &PositionController::setPidLinearParms, this);
+    pidAngularParamsSubscriber = nh.subscribe("simulator/pid_angular_params", 1000, &PositionController::setPidAngularParms, this);
+    velocityPublisher = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 1000);
+
+    pidLinearPtr = new Pid(this->lp, this->li, this->ld, MAX_LINEAR_VELOCITY, MIN_LINEAR_VELOCITY, false);
+    pidAngularPtr = new Pid(this->ap, this->ai, this->ad, MAX_ANGULAR_VELOCITY, MIN_ANGULAR_VELOCITY, false);
     ROS_INFO("Starting command controller node");
 }
 
-void PositionController::positionFeedback(const turtlesim::Pose::ConstPtr& msg)
+void PositionController::moveToTimer(const ros::TimerEvent& event)
 {
-    currentX = msg->x;
-    currentY = msg->y;
-    double angle = msg->theta * (180/3.14);
-    angle = angle < 0 ? 360 + angle : angle; 
-    currentTheta = angle;
-}
+    double expectedTheta = computeTangent(this->currentX, this->currentY, this->expectedX, this->expectedY);
+    double distance = computeDistance(this->currentX, this->currentY, this->expectedX, this->expectedY);
 
-void PositionController::sendCommand(double linearVelocity, double angularVelocity)
-{
+    angularVelocity = pidAngularPtr->runNextIteration(currentTheta, expectedTheta);
+    angularVelocity = abs(angularVelocity);
+    double value = round(currentTheta - expectedTheta);
+    if(value > -5 && value < 5)
+    {
+        angularVelocity = 0;
+    }
+    linearVelocity = pidLinearPtr->runNextIteration(round(distance), 0);
+
     geometry_msgs::Twist twist;
     twist.linear.x = linearVelocity;
     twist.angular.z = angularVelocity;
-    commandPublisher.publish(twist);
+    velocityPublisher.publish(twist);
+
+    ROS_INFO("Linear velocity: %lf, Angular velocity: %lf, currentX: %lf, expectedX: %lf, currentY: %lf, expectedY: %lf, currentTheta: %lf, expectedTheta: %lf", 
+        linearVelocity, angularVelocity, currentX, expectedX, currentY, expectedY, currentTheta, expectedTheta);
 }
 
-double PositionController::computeTangent()
+/**
+ * @brief Callback method to set new target for agent
+ * @param msg (pid_simulator_msgs::Target)
+ */
+void PositionController::setTarget(const pid_simulator_msgs::Target::ConstPtr& msg)
 {
-    double theta = atan2 (this->expectedY - this->currentY, this->expectedX - this->currentX);
+    this->expectedX = msg->x;
+    this->expectedY = msg->y;
+    this->expectedTheta = msg->theta;
+}
+
+/**
+ * @brief Callback method to set params for PID algoirthm (Linear velocity tuning) 
+ * @param msg (pid_simulator_msgs::PidTuner)
+ */
+void PositionController::setPidLinearParms(const pid_simulator_msgs::PidTuner::ConstPtr& msg)
+{
+    this->lp = msg->p;
+    this->li = msg->i;
+    this->ld = msg->d;
+}
+
+/**
+ * @brief Callback method to set params for PID algoirthm (Angular velocity tuning) 
+ * @param msg (pid_simulator_msgs::PidTuner)
+ */
+void PositionController::setPidAngularParms(const pid_simulator_msgs::PidTuner::ConstPtr& msg)
+{
+    this->ap = msg->p;
+    this->ai = msg->i;
+    this->ad = msg->d;
+}
+
+/**
+ * @brief Callback method to set position information from  
+ * @param msg (turtlesim::Pose)
+ */
+void PositionController::setPosition(const turtlesim::Pose::ConstPtr& msg)
+{
+    this->currentX = msg->x;
+    this->currentY = msg->y;
+    double angle = msg->theta * (180/3.14);
+    angle = angle < 0 ? 360 + angle : angle; 
+    this->currentTheta = angle;
+}
+
+/**
+ * @brief Method to compute distance between two given points
+ * @return double 
+ */
+double PositionController::computeDistance(double fromX, double fromY, double toX, double toY)
+{
+    double distance = sqrt((toX - fromX) * (toX - fromX)) + ((toY - fromY) * (toY - fromY));
+    return distance;
+}
+
+/**
+ * @brief Method to compute angle between two given points
+ * @return double 
+ */
+double PositionController::computeTangent(double fromX, double fromY, double toX, double toY)
+{
+    double theta = atan2 (toY - fromY, toX - fromX);
     theta = theta * (180/3.14);
     theta = theta < 0 ? 360 + theta : theta; 
     return theta;
 }
 
-double PositionController::computeDistance()
-{
-    double distance = sqrt((expectedX - currentX) * (expectedX - currentX)) + ((expectedY - currentY) * (expectedY - currentY));
-    return distance;
-}
-
-void PositionController::moveToTimer(const ros::TimerEvent& event)
-{
-    double expectedTheta = computeTangent();
-    ROS_INFO("The expected Theta: %lf", expectedTheta);
-    double distance = computeDistance();
-    ROS_INFO("%lf %lf %lf", currentTheta, expectedTheta, distance);
-
-    if(!indicator)
-    {
-        angularVelocity = pidAngularPtr->runNextIteration(currentTheta, expectedTheta);
-        angularVelocity = abs(angularVelocity);
-        double value = round(currentTheta - expectedTheta);
-        if(value > -5 && value < 5)
-        {
-            indicator = true;
-            angularVelocity = 0;
-        }
-    }
-    else
-    {
-        linearVelocity = pidLinearPtr->runNextIteration(round(distance), 0);
-    }
-
-    sendCommand(linearVelocity, angularVelocity); 
-    ROS_INFO("Linear velocity: %lf, Angular velocity: %lf, currentX: %lf, expectedX: %lf, currentY: %lf, expectedY: %lf, currentTheta: %lf, expectedTheta: %lf", 
-        linearVelocity, angularVelocity, currentX, expectedX, currentY, expectedY, currentTheta, expectedTheta);
-}
-
-void PositionController::moveTo(double x, double y)
-{
-    this->expectedX = x;
-    this->expectedY = y;
-}
-
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "position_controller");
+    ros::init(argc, argv, NODE_NAME);
     ros::NodeHandle nh;
     PositionController positionController = PositionController(nh);
-    positionController.moveTo(5.5, 3.5);
-    ros::Timer timer = nh.createTimer(ros::Duration(0.3), &PositionController::moveToTimer, &positionController);
+    ros::Timer timer = nh.createTimer(ros::Duration(TIMER_FREQUENCY), &PositionController::moveToTimer, &positionController);
     ros::spin();
-
     return 0;
 }

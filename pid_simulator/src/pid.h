@@ -21,7 +21,6 @@ class Pid
         double runNextIteration(double output, double setPoint);
         void updateParameters(double kp, double ki, double kd);
         void reset();
-        double getKp();
 };
 
 #endif
