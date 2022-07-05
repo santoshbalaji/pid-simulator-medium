@@ -13,19 +13,27 @@ PositionController::PositionController(ros::NodeHandle& nh)
     ROS_INFO("Starting command controller node");
 }
 
+/**
+ * @brief Callback used by timer. Holds entire logic to move agent towards target
+ * @param event 
+ */
 void PositionController::moveToTimer(const ros::TimerEvent& event)
 {
     double expectedTheta = computeTangent(this->currentX, this->currentY, this->expectedX, this->expectedY);
     double distance = computeDistance(this->currentX, this->currentY, this->expectedX, this->expectedY);
 
     angularVelocity = pidAngularPtr->runNextIteration(currentTheta, expectedTheta);
-    angularVelocity = abs(angularVelocity);
-    double value = round(currentTheta - expectedTheta);
-    if(value > -5 && value < 5)
+    linearVelocity = pidLinearPtr->runNextIteration(round(distance), 0);
+
+    double steeringAngleError = round(currentTheta - expectedTheta);
+    if(steeringAngleError < STEERING_ANGLE_THRESHOLD)
     {
         angularVelocity = 0;
     }
-    linearVelocity = pidLinearPtr->runNextIteration(round(distance), 0);
+    if(distance < DISTANCE_THRESHOLD)
+    {
+        linearVelocity = 0;
+    }
 
     geometry_msgs::Twist twist;
     twist.linear.x = linearVelocity;

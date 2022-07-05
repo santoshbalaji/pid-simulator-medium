@@ -8,28 +8,45 @@ Pid::Pid(double kp, double kd, double ki, double maxLimit, double minLimit, bool
     this->maxLimit = maxLimit;
     this->minLimit = minLimit;
     this->reverse = reverse;
+
+    for(int i = 0; i < STACK_SIZE; i++)
+    {
+        this->errors[i] = 0;
+    }
 }
 
+/**
+ * @brief Method to run entire pid algorithm once (single iteration run)
+ * @param output (double) 
+ * @param setPoint (double)
+ * @return double 
+ */
 double Pid::runNextIteration(double output, double setPoint) 
 {
     double error = output - setPoint;
-    double transit = (kp * error) + (ki * previousError);
+    double transit = (this->kp * error) + (this->ki * previousError) + (this->kd * computeGrossError());
     if(transit < this->maxLimit && transit > this->minLimit)
     {
-        input = transit;
+        this->input = transit;
     }
     else if(transit < this->minLimit)
     {
-        input = this->minLimit;
+        this->input = this->minLimit;
     }
     else if(transit > this->maxLimit)
     {
-        input = this->maxLimit;
+       this-> input = this->maxLimit;
     }
-    previousError = error;
-    return reverse ? -input : input;
+    this->previousError = error;
+    return reverse ? -this->input : this->input;
 }
 
+/**
+ * @brief Method to update parameters for PID dynamically
+ * @param kp (double) 
+ * @param kd (double)
+ * @param ki (double)
+ */
 void Pid::updateParameters(double kp, double kd, double ki) 
 {
     this->kd = kd;
@@ -37,32 +54,40 @@ void Pid::updateParameters(double kp, double kd, double ki)
     this->kp = kp;
 }
 
+/**
+ * @brief Method to reset the PID controller
+ */
 void Pid::reset()
 {
-    currentError = 0;
-    previousError = 0;
-    setPoint = 0;
-    input = 0;
-    output = 0;
+    this->currentError = 0;
+    this->previousError = 0;
+    this->setPoint = 0;
+    this->input = 0;
+    this->output = 0;
     for(int i = 0; i < STACK_SIZE; i++)
     {
-        previousErrors[i] = 0;
+        this->errors[i] = 0;
     }
 }
 
+/**
+ * @brief Method to compute gross error over period of time (based on stack size)
+ * @return double 
+ */
 double Pid::computeGrossError()
 {
     double value = 0;
-    double newSetofErrors[10];
-    int i = 0;
-    for(i = 0; i < sizeof(previousErrors); i++)
+    for(int i = 0; i < STACK_SIZE; i++)
     {
-        value = value + previousErrors[i];
-        if(i != 0)
+        value = value + this->errors[i];
+        if(i >= STACK_SIZE)
         {
-            newSetofErrors[i - 1] = previousErrors[i];
+            this->errors[i] = this->currentError;
+        }
+        else
+        {
+            this->errors[i] = this->errors[i+1];
         }
     }
-    newSetofErrors[i != 0 ? i - 1 : i] = currentError;
     return value;
 }

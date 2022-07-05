@@ -18,6 +18,8 @@
 #define MIN_LINEAR_VELOCITY -0.5
 #define MAX_ANGULAR_VELOCITY 0.5
 #define MIN_ANGULAR_VELOCITY -0.5
+#define DISTANCE_THRESHOLD 1
+#define STEERING_ANGLE_THRESHOLD 0.5
 
 
 class PositionController
