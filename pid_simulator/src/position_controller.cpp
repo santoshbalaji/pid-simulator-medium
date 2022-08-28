@@ -1,4 +1,4 @@
-#include "position_controller.h"
+#include "position_controller.hpp"
 
 PositionController::PositionController(ros::NodeHandle& nh)
 {

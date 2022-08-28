@@ -10,7 +10,7 @@
 #include "geometry_msgs/Twist.h"
 #include "pid_simulator_msgs/Target.h"
 #include "pid_simulator_msgs/PidTuner.h"
-#include "pid.h"
+#include "pid.hpp"
 
 #define NODE_NAME "position_controller"
 #define TIMER_FREQUENCY 0.3
@@ -36,7 +36,7 @@ class PositionController
         ros::Subscriber positionSubscriber;
 
         double currentX, currentY, currentTheta;
-        double expectedX, expectedY, expectedTheta;
+        double expectedX = 5.5, expectedY = 2.5, expectedTheta = 0;
         double linearVelocity, angularVelocity;
         double lp, li, ld;
         double ap, ai, ad;

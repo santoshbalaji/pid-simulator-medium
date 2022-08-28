@@ -1,4 +1,4 @@
-#include "pid.h"
+#include "pid.hpp"
 
 Pid::Pid(double kp, double kd, double ki, double maxLimit, double minLimit, bool reverse) 
 {
